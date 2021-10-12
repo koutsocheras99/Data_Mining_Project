@@ -78,3 +78,48 @@ for word, i in t.word_index.items():
         embedding_matrix[i] = embedding_vector
 
 print(embedding_matrix.shape)
+
+# define the model
+# parameters can be twisted
+# the best scenario would be to backpropagate/or prune to get the best model structure and parameters
+# but there was a lack of time
+model = Sequential()
+model.add(Embedding(vocab_size, 100, weights=[embedding_matrix], input_length=80, trainable=False))
+model.add(Conv1D(256, 2, activation='relu'))
+model.add(MaxPooling1D(2))
+model.add(Dropout(0.3))
+model.add(Conv1D(128, 2, activation='relu'))
+model.add(MaxPooling1D(2))
+model.add(Dropout(0.3))
+model.add(Conv1D(64, 2, activation='relu'))
+model.add(MaxPooling1D(2))
+model.add(Dropout(0.3))
+model.add(Flatten())
+model.add(Dense(1, activation='sigmoid'))
+# compile the model
+model.compile(optimizer='rmsprop', loss='binary_crossentropy', metrics=['acc'])
+# summarize the model
+print(model.summary())
+
+# split training-testing 
+X_train, X_test, y_train, y_test = train_test_split(padded_email_data, labels, test_size=0.25)
+
+# fit the model
+# change to verbose='auto' to see one by one epoch
+model.fit(X_train, y_train, epochs=50, verbose=0)
+# evaluate the model
+loss, accuracy = model.evaluate(X_test, y_test, verbose=0)
+print('Accuracy: %f' % (accuracy*100))
+
+
+y_pred = model.predict(X_test).astype('int32')
+
+# evaluate the accuracy of the classification
+# parameters are y_true (y_test as they are from the orignial dataset) and what we predicted (y_pred)
+matrix = confusion_matrix(y_test,y_pred)
+
+print(matrix)
+
+# get a report showing the main classification metrics
+# parameters are y_true (y_test as they are from the orignial dataset) and what we predicted (y_pred)
+print(classification_report(y_test, y_pred))
